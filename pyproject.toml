@@ -1,0 +1,35 @@
+[tool.poetry]
+authors = ["Vagiz Duseev <vagiz.duseev@dynatrace.com>"]
+description = "Helper library implementing best practices for strongly typed models and reporting metrics"
+documentation = "https://github.com/dynatrace-extensions/dt-extensions-python-models"
+homepage = "https://github.com/dynatrace-extensions/dt-extensions-models"
+keywords = ["dynatrace", "extensions"]
+license = "Apache-2.0"
+maintainers = ["Vagiz Duseev <vagiz.duseev@dynatrace.com>"]
+name = "dt-extensions-models"
+packages = [
+  {include = "dynatrace_extension_models"},
+]
+readme = "README.md"
+repository = "https://github.com/dynatrace-extensions/dt-extensions-python-models"
+version = "0.0.12"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+dt-extensions-sdk = "^1.1"
+pydantic = "^2.7"
+
+[tool.poetry.group.dev.dependencies]
+bump2version = ">=1.0"
+debugpy = "^1.8.1"
+
+
+[tool.poetry.group.test.dependencies]
+pytest = "^8.2.0"
+
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core>=1.0.8"]
+
+[tool.black]
+line-length = 120
