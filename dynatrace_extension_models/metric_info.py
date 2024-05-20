@@ -1,7 +1,7 @@
 from typing import Callable
 
 from dynatrace_extension import MetricType
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 ValueFactory = Callable[[BaseModel], float | None]
@@ -17,8 +17,8 @@ Static list of model attributes to be used as dimensions:
 
 
 class MetricInfo(BaseModel):
-    key: str | None = None
-    type: MetricType = MetricType.GAUGE
-    value_factory: ValueFactory | None = None
-    dimensions: Dimensions | None = None
-    ignore_parent_dimensions: bool | None = None
+    key: str | None = Field(None)
+    type: MetricType = Field(MetricType.GAUGE)
+    value_factory: ValueFactory | None = Field(None)
+    dimensions: Dimensions | None = Field(None)
+    ignore_parent_dimensions: bool | None = Field(None)

@@ -1,6 +1,8 @@
+from datetime import datetime
+from copy import deepcopy
 from typing import Any, Callable
 
-from dynatrace_extension import Metric
+from dynatrace_extension import Metric, MetricType
 from pydantic import BaseModel
 
 from .metric_info import MetricInfo
@@ -11,7 +13,9 @@ def _compute_dimensions(
     parent_dimensions: dict[str, str] = None,
     parent: BaseModel | None = None,
 ) -> dict[str, str]:
-    dimensions = parent_dimensions or {}
+    dimensions = {}
+    if parent_dimensions:
+        dimensions = deepcopy(parent_dimensions)
     if isinstance(parent, BaseModel):
         if isinstance(dimensions_definition, Callable):
             computed_dims = dimensions_definition(parent)
@@ -28,9 +32,10 @@ def _compute_dimensions(
 
 def _to_metrics(
     data: Any,
-    parent: BaseModel | None = None,
     metric_info: MetricInfo | None = None,
-    dimensions: dict[str, str] | None = None,
+    parent: BaseModel | None = None,
+    parent_dimensions: dict[str, str] | None = None,
+    timestamp: datetime | None = None,
 ) -> list[Metric]:
     """Turn any type of data into a list of Metric objects by traversing it recursively.
     """
@@ -40,7 +45,7 @@ def _to_metrics(
     ignore_parent_dimensions = getattr(metric_info, "ignore_parent_dimensions", False)
     dimensions = _compute_dimensions(
         dimensions_definition=getattr(metric_info, "dimensions", None),
-        parent_dimensions=None if ignore_parent_dimensions else dimensions,
+        parent_dimensions=None if ignore_parent_dimensions else parent_dimensions,
         parent=parent,
     )
 
@@ -63,14 +68,14 @@ def _to_metrics(
             if metric_info and metric_info.key is None:
                 metric_info.key = field_name
 
-            field_mint_lines = _to_metrics(field_value, data, metric_info, dimensions)
-            metrics.extend(field_mint_lines)
+            field_metrics = _to_metrics(field_value, metric_info, data, dimensions)
+            metrics.extend(field_metrics)
 
     elif isinstance(data, dict):
         # Case 2: Dict
         for item in data.values():
-            dict_item_mint_lines = _to_metrics(item, parent, metric_info, dimensions)
-            metrics.extend(dict_item_mint_lines)
+            dict_item_metrics = _to_metrics(item, metric_info, parent, dimensions)
+            metrics.extend(dict_item_metrics)
 
     elif (
         isinstance(data, list)
@@ -79,8 +84,8 @@ def _to_metrics(
     ):
         # Case 3: List
         for item in data:
-            list_item_mint_lines = _to_metrics(item, parent, metric_info, dimensions)
-            metrics.extend(list_item_mint_lines)
+            list_item_metrics = _to_metrics(item, metric_info, parent, dimensions)
+            metrics.extend(list_item_metrics)
 
     else:
         # Case 4: Any other data, if it comes with MetricInfo
@@ -106,11 +111,15 @@ def _to_metrics(
         if value is None:
             return metrics
 
+        if metric_info.type == MetricType.COUNT and timestamp is None:
+            timestamp = datetime.now()
+
         metric = Metric(
             key=metric_info.key,
             value=value,
             dimensions=dimensions,
             metric_type=metric_info.type,
+            timestamp=timestamp,
         )
         metrics.append(metric)
 
